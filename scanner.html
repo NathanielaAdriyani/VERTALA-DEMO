@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vertala AI — Plant Health Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0f1b35;
+    --navy-card: #1a2744;
+    --navy-light: #243158;
+    --red: #c41e3a;
+    --red-dark: #a01830;
+    --green: #2d9e5f;
+    --blue: #1a56a0;
+    --orange: #e07b00;
+    --white: #ffffff;
+    --grey: #8a9bbf;
+    --grey-light: #c5cfe0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--navy);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 0 0 40px 0;
+  }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    padding: 36px 24px 28px;
+    position: relative;
+  }
+
+  .header::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 2px;
+    background: var(--red);
+    margin: 14px auto 0;
+  }
+
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px;
+    letter-spacing: 6px;
+    color: var(--white);
+    text-transform: uppercase;
+  }
+
+  .logo span { color: var(--red); }
+
+  .tagline {
+    font-size: 12px;
+    color: var(--grey);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 6px;
+    font-weight: 500;
+  }
+
+  /* MAIN CONTAINER */
+  .container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+
+  /* UPLOAD ZONE */
+  .upload-card {
+    background: var(--navy-card);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .upload-zone {
+    border: 1.5px dashed var(--navy-light);
+    border-radius: 14px;
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    background: rgba(255,255,255,0.02);
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .upload-zone.dragover {
+    border-color: var(--red);
+    background: rgba(196, 30, 58, 0.05);
+  }
+
+  .upload-zone.has-image {
+    padding: 0;
+    border-style: solid;
+    border-color: var(--navy-light);
+  }
+
+  .upload-icon { font-size: 44px; margin-bottom: 12px; }
+
+  .upload-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 4px;
+  }
+
+  .upload-sub {
+    font-size: 12px;
+    color: var(--grey);
+  }
+
+  #preview-img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 13px;
+    display: none;
+  }
+
+  /* INPUT BUTTONS */
+  .input-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .btn-input {
+    background: var(--navy-light);
+    border: none;
+    border-radius: 12px;
+    padding: 14px 10px;
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-input:hover { background: #2d3f6b; transform: translateY(-1px); }
+  .btn-input:active { transform: translateY(0); }
+  .btn-input:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* HIDDEN FILE INPUTS */
+  #file-gallery { display: none; }
+  #file-camera { display: none; }
+
+  /* LOADING */
+  .loading-state {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+    background: var(--navy-card);
+    border-radius: 20px;
+    margin-bottom: 16px;
+  }
+
+  .loading-state.visible { display: block; }
+
+  .spinner {
+    width: 44px;
+    height: 44px;
+    border: 3px solid rgba(196, 30, 58, 0.2);
+    border-top-color: var(--red);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-size: 14px;
+    color: var(--grey-light);
+    font-weight: 500;
+  }
+
+  .loading-sub {
+    font-size: 12px;
+    color: var(--grey);
+    margin-top: 4px;
+  }
+
+  /* ERROR */
+  .error-card {
+    display: none;
+    background: rgba(196, 30, 58, 0.1);
+    border: 1px solid rgba(196, 30, 58, 0.3);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    color: #ff6b7a;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .error-card.visible { display: block; }
+
+  /* RESULT CARD */
+  .result-card {
+    display: none;
+    background: var(--navy-card);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 16px;
+    animation: fadeSlideIn 0.4s ease forwards;
+  }
+
+  .result-card.visible { display: block; }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SECTION LABELS */
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 12px;
+  }
+
+  /* DIVIDER */
+  .divider {
+    height: 1px;
+    background: rgba(255,255,255,0.07);
+    margin: 20px 0;
+  }
+
+  /* DIAGNOSIS SECTION */
+  .disease-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 24px;
+    color: var(--white);
+    line-height: 1.2;
+    margin-bottom: 10px;
+  }
+
+  .confidence-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .confidence-text {
+    font-size: 13px;
+    color: var(--grey);
+  }
+
+  .severity-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-high { background: rgba(196,30,58,0.2); color: #ff6b7a; border: 1px solid rgba(196,30,58,0.4); }
+  .badge-medium { background: rgba(224,123,0,0.2); color: #ffb347; border: 1px solid rgba(224,123,0,0.4); }
+  .badge-low { background: rgba(45,158,95,0.2); color: #5fd68a; border: 1px solid rgba(45,158,95,0.4); }
+  .badge-sehat { background: rgba(45,158,95,0.2); color: #5fd68a; border: 1px solid rgba(45,158,95,0.4); }
+
+  /* TREATMENT SECTION */
+  .treatment-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .treatment-list li {
+    font-size: 13.5px;
+    color: var(--grey-light);
+    line-height: 1.5;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .treatment-list li::before {
+    content: '✓';
+    color: var(--green);
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* FARMER PROFILE */
+  .farmer-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .farmer-avatar {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--red), #8b0000);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .farmer-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .farmer-location {
+    font-size: 12px;
+    color: var(--grey);
+    margin-top: 2px;
+  }
+
+  .score-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .score-label { font-size: 12px; color: var(--grey); }
+  .score-value { font-size: 14px; font-weight: 700; color: var(--red); }
+
+  .score-bar-bg {
+    background: rgba(255,255,255,0.08);
+    border-radius: 6px;
+    height: 6px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+
+  .score-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red-dark), var(--red));
+    border-radius: 6px;
+    transition: width 0.8s ease;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .stat-row:last-child { border-bottom: none; }
+  .stat-key { font-size: 12px; color: var(--grey); }
+  .stat-val { font-size: 12px; font-weight: 600; color: var(--grey-light); }
+  .stat-val.green { color: #5fd68a; }
+
+  /* REPORT BUTTONS */
+  .report-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .btn-report {
+    border: none;
+    border-radius: 12px;
+    padding: 15px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-report::after {
+    content: '→';
+    position: absolute;
+    right: 18px;
+    font-size: 16px;
+    opacity: 0.6;
+  }
+
+  .btn-report:hover { transform: translateX(3px); filter: brightness(1.1); }
+  .btn-report.green-btn { background: var(--green); }
+  .btn-report.blue-btn { background: var(--blue); }
+  .btn-report.navy-btn { background: var(--navy-light); border: 1px solid rgba(196,30,58,0.4); }
+
+  .report-note {
+    font-size: 11px;
+    color: var(--grey);
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  /* SCAN ULANG BUTTON */
+  .btn-reset {
+    width: 100%;
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 14px;
+    color: var(--grey-light);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .btn-reset.visible { display: block; }
+  .btn-reset:hover { border-color: rgba(255,255,255,0.3); color: var(--white); }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    padding: 16px 24px 0;
+  }
+
+  .footer p {
+    font-size: 11px;
+    color: var(--grey);
+    letter-spacing: 0.5px;
+    line-height: 1.8;
+  }
+
+  .footer .dot {
+    color: var(--red);
+    margin: 0 6px;
+  }
+
+  /* MOBILE RESPONSIVE */
+  @media (max-width: 360px) {
+    .logo { font-size: 26px; }
+    .disease-name { font-size: 20px; }
+    .input-buttons { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">VERTALA<span>AI</span></div>
+  <div class="tagline">Green Intelligence for Indonesian Patchouli</div>
+</div>
+
+<div class="container">
+
+  <!-- UPLOAD CARD -->
+  <div class="upload-card" id="upload-card">
+    <div class="upload-zone" id="upload-zone">
+      <img id="preview-img" alt="Preview daun" />
+      <div id="upload-placeholder">
+        <div class="upload-icon">🌿</div>
+        <div class="upload-title">Upload foto daun nilam</div>
+        <div class="upload-sub">Drag & drop atau gunakan tombol di bawah</div>
+      </div>
+    </div>
+
+    <div class="input-buttons">
+      <button class="btn-input" id="btn-gallery" onclick="document.getElementById('file-gallery').click()">
+        📁 Pilih dari Galeri
+      </button>
+      <button class="btn-input" id="btn-camera" onclick="document.getElementById('file-camera').click()">
+        📷 Ambil Foto
+      </button>
+    </div>
+
+    <input type="file" id="file-gallery" accept="image/*">
+    <input type="file" id="file-camera" accept="image/*" capture="environment">
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading-state" id="loading-state">
+    <div class="spinner"></div>
+    <div class="loading-text">Menganalisis daun nilam...</div>
+    <div class="loading-sub">Menghubungi sistem AI Vertala</div>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-card" id="error-card">
+    ⚠ Koneksi gagal. Pastikan token valid dan coba lagi.
+  </div>
+
+  <!-- RESULT CARD -->
+  <div class="result-card" id="result-card">
+
+    <!-- SECTION 1: DIAGNOSIS -->
+    <div class="section-label">Hasil Diagnosa</div>
+    <div class="disease-name" id="disease-name">—</div>
+    <div class="confidence-row">
+      <span class="confidence-text" id="confidence-text">—</span>
+      <span class="severity-badge" id="severity-badge">—</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECTION 2: TREATMENT -->
+    <div class="section-label">Rekomendasi Treatment Organik</div>
+    <ul class="treatment-list" id="treatment-list"></ul>
+
+    <div class="divider"></div>
+
+    <!-- SECTION 3: FARMER PROFILE -->
+    <div class="section-label">Profil Terverifikasi</div>
+    <div class="farmer-header">
+      <div class="farmer-avatar">👨‍🌾</div>
+      <div>
+        <div class="farmer-name">Yusuf</div>
+        <div class="farmer-location">📍 Pidie, Aceh</div>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <span class="score-label">Vertala Score</span>
+      <span class="score-value">83 / 100</span>
+    </div>
+    <div class="score-bar-bg">
+      <div class="score-bar-fill" style="width: 83%"></div>
+    </div>
+
+    <div class="stat-row">
+      <span class="stat-key">Total Sesi Diagnosa</span>
+      <span class="stat-val">34 sesi</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-key">Status Lahan</span>
+      <span class="stat-val green">GPS Terverifikasi ✓</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-key">ID Lahan</span>
+      <span class="stat-val">BPK-YSF-001-PIDIE</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECTION 4: REPORT BUTTONS -->
+    <div class="section-label">Unduh Laporan</div>
+    <div class="report-buttons">
+      <button class="btn-report green-btn">📄 Laporan Petani — Sertifikat Hijau</button>
+      <button class="btn-report blue-btn">🏦 Laporan Bank — Green Risk Dashboard</button>
+      <button class="btn-report navy-btn">🇫🇷 Laporan Buyer — Supply Chain Report</button>
+    </div>
+    <div class="report-note">Laporan PDF akan tersedia di versi berikutnya</div>
+
+  </div>
+
+  <!-- SCAN ULANG -->
+  <button class="btn-reset" id="btn-reset">🔄 Scan Ulang</button>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <p>France–Indonesia Innovation Year 2026</p>
+    <p>France Alumni Indonesia Innovation Challenge<span class="dot">·</span>Bridging Ideas, Creating Impact</p>
+  </div>
+
+</div>
+
+<script>
+  // ============================================
+  // CONFIGURATION — GANTI TOKEN DI SINI
+  // ============================================
+  const HF_TOKEN = "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";
+  const HF_MODEL = "https://api-inference.huggingface.co/models/linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification";
+
+  // ============================================
+  // DISEASE MAPPING
+  // ============================================
+  const DISEASE_MAP = [
+    {
+      keywords: ["healthy"],
+      disease: "Sehat — Pertumbuhan Optimal",
+      severity: "sehat",
+      treatment: [
+        "Tidak diperlukan treatment. Pertahankan kondisi saat ini.",
+        "Pertahankan kondisi irigasi dan nutrisi tanah.",
+        "Lakukan scan rutin setiap 2 minggu untuk deteksi dini."
+      ]
+    },
+    {
+      keywords: ["bacterial", "wilt"],
+      disease: "Layu Bakteri (Bacterial Wilt)",
+      treatment: [
+        "Cabut dan musnahkan tanaman terinfeksi segera.",
+        "Siram area sekitar dengan larutan tembaga sulfat 0.2%.",
+        "Perbaiki sistem drainase lahan untuk cegah penyebaran."
+      ]
+    },
+    {
+      keywords: ["blight", "fungal", "mold"],
+      disease: "Fusarium Wilt",
+      treatment: [
+        "Semprotkan fungisida nabati berbasis ekstrak bawang putih.",
+        "Kurangi kelembaban dengan memperlebar jarak tanam.",
+        "Rotasi tanaman setelah panen untuk putus siklus penyakit."
+      ]
+    },
+    {
+      keywords: ["curl", "yellow", "virus", "spot"],
+      disease: "Budok (Synchytrium)",
+      treatment: [
+        "Gunakan bibit nilam bebas virus bersertifikat.",
+        "Kendalikan serangga vektor dengan insektisida organik.",
+        "Isolasi dan karantina tanaman terinfeksi segera."
+      ]
+    }
+  ];
+
+  const DEFAULT_DISEASE = {
+    disease: "Bercak Daun",
+    treatment: [
+      "Semprotkan campuran air dan baking soda pada daun terinfeksi.",
+      "Pangkas dan musnahkan daun yang menunjukkan gejala.",
+      "Tingkatkan sirkulasi udara di sekitar tanaman."
+    ]
+  };
+
+  // ============================================
+  // ELEMENTS
+  // ============================================
+  const uploadZone    = document.getElementById('upload-zone');
+  const uploadPlaceholder = document.getElementById('upload-placeholder');
+  const previewImg    = document.getElementById('preview-img');
+  const fileGallery   = document.getElementById('file-gallery');
+  const fileCamera    = document.getElementById('file-camera');
+  const btnGallery    = document.getElementById('btn-gallery');
+  const btnCamera     = document.getElementById('btn-camera');
+  const loadingState  = document.getElementById('loading-state');
+  const errorCard     = document.getElementById('error-card');
+  const resultCard    = document.getElementById('result-card');
+  const btnReset      = document.getElementById('btn-reset');
+  const uploadCard    = document.getElementById('upload-card');
+
+  // ============================================
+  // FILE INPUT HANDLERS
+  // ============================================
+  fileGallery.addEventListener('change', e => handleFile(e.target.files[0]));
+  fileCamera.addEventListener('change',  e => handleFile(e.target.files[0]));
+
+  // DRAG & DROP
+  uploadZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    uploadZone.classList.add('dragover');
+  });
+
+  uploadZone.addEventListener('dragleave', () => {
+    uploadZone.classList.remove('dragover');
+  });
+
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) handleFile(file);
+  });
+
+  // ============================================
+  // MAIN FLOW
+  // ============================================
+  function handleFile(file) {
+    if (!file) return;
+
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = e => {
+      previewImg.src = e.target.result;
+      previewImg.style.display = 'block';
+      uploadPlaceholder.style.display = 'none';
+      uploadZone.classList.add('has-image');
+    };
+    reader.readAsDataURL(file);
+
+    // Start analysis
+    analyzeImage(file);
+  }
+
+  async function analyzeImage(file) {
+    // Reset states
+    errorCard.classList.remove('visible');
+    resultCard.classList.remove('visible');
+    btnReset.classList.remove('visible');
+
+    // Show loading
+    loadingState.classList.add('visible');
+    btnGallery.disabled = true;
+    btnCamera.disabled = true;
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+
+      const response = await fetch(HF_MODEL, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${HF_TOKEN}` },
+        body: arrayBuffer
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const data = await response.json();
+
+      if (!Array.isArray(data) || data.length === 0) throw new Error('Empty response');
+
+      const topResult = data[0];
+      displayResult(topResult.label, topResult.score);
+
+    } catch (err) {
+      console.error('API Error:', err);
+      errorCard.classList.add('visible');
+      btnReset.classList.add('visible');
+    } finally {
+      loadingState.classList.remove('visible');
+      btnGallery.disabled = false;
+      btnCamera.disabled = false;
+    }
+  }
+
+  // ============================================
+  // DISPLAY RESULT
+  // ============================================
+  function displayResult(label, score) {
+    const labelLower = label.toLowerCase();
+
+    // Find matching disease
+    let match = null;
+    for (const entry of DISEASE_MAP) {
+      if (entry.keywords.some(k => labelLower.includes(k))) {
+        match = entry;
+        break;
+      }
+    }
+    if (!match) match = DEFAULT_DISEASE;
+
+    // Determine severity
+    let severityClass, severityText;
+    if (match.severity === 'sehat') {
+      severityClass = 'badge-sehat';
+      severityText = '✓ Sehat';
+    } else if (score > 0.60) {
+      severityClass = 'badge-high';
+      severityText = '⚠ Tinggi';
+    } else if (score >= 0.30) {
+      severityClass = 'badge-medium';
+      severityText = '◑ Sedang';
+    } else {
+      severityClass = 'badge-low';
+      severityText = '✓ Rendah';
+    }
+
+    // Populate result card
+    document.getElementById('disease-name').textContent = match.disease;
+    document.getElementById('confidence-text').textContent = `Tingkat keyakinan: ${(score * 100).toFixed(1)}%`;
+
+    const badge = document.getElementById('severity-badge');
+    badge.textContent = severityText;
+    badge.className = `severity-badge ${severityClass}`;
+
+    const treatmentList = document.getElementById('treatment-list');
+    treatmentList.innerHTML = match.treatment
+      .map(t => `<li>${t}</li>`)
+      .join('');
+
+    // Show result
+    resultCard.classList.add('visible');
+    btnReset.classList.add('visible');
+
+    // Scroll to result
+    setTimeout(() => {
+      resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+
+  // ============================================
+  // RESET
+  // ============================================
+  btnReset.addEventListener('click', () => {
+    previewImg.style.display = 'none';
+    previewImg.src = '';
+    uploadPlaceholder.style.display = 'flex';
+    uploadZone.classList.remove('has-image', 'dragover');
+    resultCard.classList.remove('visible');
+    errorCard.classList.remove('visible');
+    btnReset.classList.remove('visible');
+    fileGallery.value = '';
+    fileCamera.value = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+</script>
+</body>
+</html>
